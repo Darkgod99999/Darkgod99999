@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Korean to nepali matching game  </title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .stats {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        .grid {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .column {
+            flex: 1;
+        }
+
+        .card {
+            background-color: #f9f9f9;
+            border: 2px solid #ddd;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 18px;
+            margin: 5px 0;
+            transition: background-color 0.3s, color 0.3s, box-shadow 0.3s;
+        }
+
+        .card.selected {
+            background-color: #cce5ff;
+            color: #004085;
+        }
+
+        .card.matched {
+            background-color: #d4edda;
+            color: #155724;
+            box-shadow: 0 0 10px 3px neon green;
+        }
+
+        .card.incorrect {
+            background-color: #f8d7da;
+            color: #721c24;
+            box-shadow: 0 0 10px 3px neon red;
+        }
+
+        .progress-bar {
+            margin: 20px 0;
+            width: 100%;
+            height: 10px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar-inner {
+            width: 0%;
+            height: 100%;
+            background-color: #4caf50;
+            transition: width 0.3s;
+        }
+
+        #continueButton, #reviewButton {
+            display: none;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #4caf50;
+            color: #fff;
+            font-size: 18px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #continueButton:hover, #reviewButton:hover {
+            background-color: #45a049;
+        }
+
+        .flashcard {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Korean to nepali matching game </h1>
+        <div class="stats">
+            <p>Matched: <span id="matchedCount">0</span> | Wrong: <span id="wrongCount">0</span></p>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-bar-inner" id="progress"></div>
+        </div>
+        <div class="grid">
+            <div class="column" id="koreanColumn"></div>
+            <div class="column" id="nepaliColumn"></div>
+        </div>
+        <button id="continueButton" onclick="continueGame()">Continue</button>
+        <button id="reviewButton" onclick="reviewCards()">Review</button>
+    </div>
+
+    <script>
+    const allPairs = [
+{ korean: "시간", nepali: "समय" },
+            { korean: "오후", nepali: "दिउँसो" },    { nepali: "दिउँसो", korean: "오후" },
+    { nepali: "बिहान", korean: "오전" },
+    { nepali: "त्यसैले", korean: "그래서" },
+    { nepali: "पुछ्नु", korean: "닦다" },
+    { nepali: "पुस्तक", korean: "책" },
+    { nepali: "विद्यालय", korean: "학교" },
+    { nepali: "शिक्षक", korean: "선생님" },
+    { nepali: "विद्यार्थी", korean: "학생" },
+    { nepali: "उद्यान", korean: "공원" },
+    { nepali: "ढुवानी गर्नु", korean: "나루다" },
+    { nepali: "विभाजित हुनु", korean: "나누이다" },
+    { nepali: "बाहिर जानु", korean: "나가다" },
+    { nepali: "खराब हुनु", korean: "나빠지다" },
+    { nepali: "बिताउनु", korean: "너다" },
+    { nepali: "छोड्नु", korean: "남기다" },
+    { nepali: "बाहिर आउनु", korean: "나오다" },
+    { nepali: "रूख लगाउनु", korean: "나무를 신다" },
+    { nepali: "लड्नु", korean: "넘어지다" },
+    { nepali: "प्रयास गर्नु", korean: "노력하다" },
+    { nepali: "खेल्नु/मोज गर्नु", korean: "놀다" },
+    { nepali: "घुम्न जानु", korean: "놀러가다" },
+    { nepali: "जिस्क्याउनु", korean: "놀리다" },
+    { nepali: "बाहिर निकाल्नु", korean: "내다" },
+    { nepali: "थिच्नु", korean: "누르다" },
+    { nepali: "शर्त लगाउनु", korean: "내기하다" },
+    { nepali: "ढुवानी गर्नु", korean: "나르다" },
+    { nepali: "सुतेर बस्नु", korean: "눕다" },
+    { nepali: "सुताउनु", korean: "눕히다" },
+    { nepali: "ढिला हुनु", korean: "늦다" },
+    { nepali: "वृद्धि हुनु", korean: "늘다" },
+    { nepali: "ओर्लनु", korean: "내리다" },
+    { nepali: "हिउँ पर्नु", korean: "눈이 오다/눈이 내리다" },
+    { nepali: "हिउँ रोकिनु", korean: "눈이 그치다" },
+    { nepali: "जन्म दिनु", korean: "낳다" },
+    { nepali: "होचो हुनु", korean: "낮다" },
+    { nepali: "पग्लनु", korean: "녹다" },
+    { nepali: "पगाल्नु", korean: "녹이다" },
+    { nepali: "ढोका ढकढक्याउनु", korean: "노크하다" },
+    { nepali: "बुढो हुनु", korean: "늙다" },
+    { nepali: "जिर्ण हुनु", korean: "낡다" },
+    { nepali: "माछा मार्नु", korean: "낚시하다" },
+    { nepali: "मौसम सफा हुनु", korean: "날씨가 맑다" },
+    { nepali: "बाकी रहनु", korean: "남다" },
+    { nepali: "दौडनु", korean: "달리다" },
+    { nepali: "अति गर्नु", korean: "너무하다" },
+    { nepali: "खेल्नु/मोज गर्नु", korean: "놀다" },
+    { nepali: "निको हुनु", korean: "낫다" },
+    { nepali: "चौडा हुनु", korean: "넓다" },
+    { nepali: "गाउनु", korean: "노래를 부르다/노래하다" },
+    { nepali: "पहेंलो हुनु", korean: "노랗다" },
+    { nepali: "सार्वजनिक स्थानमा पिसाब गर्नु", korean: "노상방뇨를 하다" },
+    { nepali: "अपरिचित हुनु", korean: "낯설다" },
+    { nepali: "परिचित हुनु", korean: "낯익다" },
+    { nepali: "गुमाउनु", korean: "놓치다" },
+    { nepali: "पोलिनु", korean: "눋다" },
+    { nepali: "पसल्नु", korean: "넘치다" },
+    { nepali: "खर्च गर्नु", korean: "낭비하다" },
+    { nepali: "जोक्र्याइँ गर्नु", korean: "농담하다" },
+    { nepali: "तेज हुनु", korean: "날카롭다" },
+    { nepali: "आँखा बन्द गर्नु", korean: "눈을 감다" },
+    { nepali: "आँखा खोल्नु", korean: "눈을 뜨다" },
+    { nepali: "आँसु आउनु", korean: "눈물이 나다" },
+    { nepali: "आँसु पुछ्नु", korean: "눈물을 닦다" },
+    { nepali: "रेकर्ड गर्नु", korean: "녹음하다" },
+    { nepali: "जानु", korean: "가다" },
+    { nepali: "हिड्नु", korean: "걷다" },
+    { nepali: "लिनु", korean: "갖다" },
+    { nepali: "फिर्ता गर्नु", korean: "갚다" },
+    { nepali: "छान्नु", korean: "고르다" },
+    { nepali: "गएर आउनु", korean: "갔다오다" },
+    { nepali: "लिई आउनु", korean: "가져오다" },
+    { nepali: "ल्याएर दिनु", korean: "갖다주다" },
+    { nepali: "फाल्नु", korean: "갖다 버리다" },
+    { nepali: "शान्त हुनु", korean: "가만 있다" },
+    { nepali: "हस्तक्षेप गर्नु", korean: "간섭하다" },
+    { nepali: "चिन्ता गर्नु", korean: "걱정하다" },
+    { nepali: "स्मरण गर्नु", korean: "기억하다" },
+    { nepali: "प्रार्थना गर्नु", korean: "기도하다" },
+    { nepali: "आशा गर्नु", korean: "기대하다" },
+    { nepali: "पाल्नु", korean: "기르다" },
+  { "nepali": "गम्भीर/प्रबल हुनु", "korean": "독하다" },
+  { "nepali": "पुल तर्नु", "korean": "다리를 건너다" },
+  { "nepali": "खुट्टा क्रस गरी बस्नु", "korean": "다리를 꼬고 앉다" },
+  { "nepali": "बटन लगाउनु", "korean": "단치를 채우다" },
+  { "nepali": "बटन खोल्नु", "korean": "단치를 풀다" },
+  { "nepali": "फोहोर हुनु", "korean": "다럽다" },
+  { "nepali": "फोहोर गर्नु", "korean": "더렵혀/더럽히다" },
+  { "nepali": "भेट्नु", "korean": "만나다" },
+  { "nepali": "खानु", "korean": "먹다" },
+  { "nepali": "खुवाउनु", "korean": "먹이다" },
+  { "nepali": "छुनु/समाउनु", "korean": "만지다" },
+  { "nepali": "पिउनु", "korean": "마시다" },
+  { "nepali": "बनाउनु", "korean": "만들다" },
+  { "nepali": "समाप्त गर्नु", "korean": "마치다" },
+  { "nepali": "प्रत्येक", "korean": "마다" },
+  { "nepali": "व्यवस्थित गर्नु", "korean": "마조하다" },
+  { "nepali": "सुक्नु/सुक्खा हुनु", "korean": "마르다" },
+  { "nepali": "सुकाउनु", "korean": "말리다" },
+  { "nepali": "भन्नु", "korean": "말하다" },
+  { "nepali": "कसैको कुरा सुन्नु", "korean": "말을 듣다" },
+  { "nepali": "सही हुनु/प्रहार हुनु", "korean": "맞다" },
+  { "nepali": "मिलाउनु", "korean": "맞추다" },
+  { "nepali": "अवरुद्ध हुनु", "korean": "막하다" },
+  { "nepali": "अवरुद्ध गर्नु", "korean": "막다" },
+  { "nepali": "स्वादिलो हुनु", "korean": "맛있다" },
+  { "nepali": "स्वाद पाउनु", "korean": "맛어다" },
+  { "nepali": "झगडा गर्नु", "korean": "말다툼하다" },
+  { "nepali": "जवाफ फर्काउनु", "korean": "말대꾸하다" },
+  { "nepali": "स्वच्छ हुनु", "korean": "맑다" },
+  { "nepali": "मास्क लगाउनु", "korean": "마스크를 쓰다" },
+  { "nepali": "टाउको दुख्नु", "korean": "머리가 아프다" },
+  { "nepali": "रोक्नु/रोकिनु", "korean": "멈추다" },
+  { "nepali": "अनमना हुनु", "korean": "멍하다" },
+  { "nepali": "समय आउनु", "korean": "머지가나다" },
+  { "nepali": "अन्तर्वार्ता दिनु", "korean": "면접을 보다" },
+  { "nepali": "जम्मा गर्नु", "korean": "모다" },
+  { "nepali": "हटाउनु/झिक्नु", "korean": "무다" },
+  { "nepali": "सोध्नु", "korean": "물어보다" },
+  { "nepali": "मिसाउनु", "korean": "무치다" },
+  { "nepali": "बेवास्ता गर्नु", "korean": "무시하다" },
+  { "nepali": "गह्रौं हुनु", "korean": "무겁다" },
+  { "nepali": "डरलाग्दो हुनु", "korean": "무섭다" },
+  { "nepali": "मसाज गर्नु/घस्नु", "korean": "문지르다" },
+  { "nepali": "समस्या आउनु", "korean": "문제가 생기다" },
+  { "nepali": "समस्या समाधान गर्नु", "korean": "문제를 해결하다" },
+  { "nepali": "समस्या समाधान गर्नु", "korean": "문제를 풀다" },
+  { "nepali": "सोधपुछ गर्नु", "korean": "문의하다" },
+  { "nepali": "थाहा नपाउनु", "korean": "모르다" },
+  { "nepali": "संकलन गर्नु", "korean": "모으다" },
+  { "nepali": "जम्मा हुनु", "korean": "모이다" },
+  { "nepali": "विश्वास गर्नु", "korean": "믿다" },
+  { "nepali": "पागल हुनु/प्रभाव पार्नु", "korean": "미치다" },
+  { "nepali": "धकेल्नु", "korean": "밀다" },
+  { "nepali": "पातलो हुनु/चिप्लो हुनु", "korean": "미끄럽다" },
+  { "nepali": "मन नपर्नु", "korean": "밉다/밉워다" },
+  { "nepali": "प्लास्टर गर्नु", "korean": "미장하다" },
+  { "nepali": "बोक्नु", "korean": "메다" },
+  { "nepali": "बाँध्नु", "korean": "매다" },
+  { "nepali": "झुन्ड्याउनु", "korean": "매달다" },
+  { "nepali": "झुन्डिनु", "korean": "매달리다" },
+  { "nepali": "पिरो हुनु", "korean": "맵다" },
+  { "nepali": "व्यस्त हुनु", "korean": "바쁘다" },
+  { "nepali": "फेर्नु/परिवर्तन गर्नु", "korean": "바꾸다" },
+  { "nepali": "फेरिनु/परिवर्तित हुनु", "korean": "바뀌다" },
+  { "nepali": "वेवास्ता गर्नु/छोडिदिनु", "korean": "방치하다" },
+  { "nepali": "फेला पार्नु", "korean": "발견하다" },
+  { "nepali": "आशा गर्नु/चाहना गर्नु", "korean": "바라다" },
+  { "nepali": "लगाउनु/ठिक हुनु", "korean": "바르다" },
+  { "nepali": "चिप्किनु/लाग्नु", "korean": "발리다" },
+  { "nepali": "प्राप्त गर्नु/पाउनु", "korean": "받다" },
+  { "nepali": "सिक्नु", "korean": "배우다" },
+  { "nepali": "विकास गर्नु/प्रगति गर्नु", "korean": "발전 시키다" },
+  { "nepali": "विरोध गर्नु", "korean": "반대하다" },
+  { "nepali": "अवरोध गर्नु/डिस्टर्ब गर्नु", "korean": "방해하다" },
+  { "nepali": "बेपरवाह हुनु/होस गुमाउनु", "korean": "방심하다" },
+  { "nepali": "त्याग्नु/फाल्नु", "korean": "버리다" },
+  { "nepali": "उतार्नु", "korean": "벗다" },
+  { "nepali": "रोग लाग्नु", "korean": "병이 나다" },
+  { "nepali": "रोग निको हुनु", "korean": "병이 낫다" },
+  { "nepali": "भित्तो", "korean": "벽이" },
+  { "nepali": "रोगीको समाचार लिनु", "korean": "병문안 하다" },
+  { nepali: "गम्भीर/प्रबल हुनु", korean: "독하다" },
+  { nepali: "पुल तर्नु", korean: "다리를 건너다" },
+  { nepali: "खुट्टा क्रस गरी बस्नु", korean: "다리를 꼬고 앉다" },
+  { nepali: "बटन लगाउनु", korean: "단치를 채우다" },
+  { nepali: "बटन खोल्नु", korean: "단치를 풀다" },
+  { nepali: "फोहोर हुनु", korean: "다럽다" },
+  { nepali: "फोहोर गर्नु", korean: "더렵혀/더럽히다" },
+  { nepali: "भेट्नु", korean: "만나다" },
+  { nepali: "खानु", korean: "먹다" },
+  { nepali: "खुवाउनु", korean: "먹이다" },
+  { nepali: "छुनु/समाउनु", korean: "만지다" },
+  { nepali: "पिउनु", korean: "마시다" },
+  { nepali: "बनाउनु", korean: "만들다" },
+  { nepali: "समाप्त गर्नु", korean: "마치다" },
+  { nepali: "प्रत्येक", korean: "마다" },
+  { nepali: "व्यवस्थित गर्नु", korean: "마조하다" },
+  { nepali: "सुक्नु/सुक्खा हुनु", korean: "마르다" },
+  { nepali: "सुकाउनु", korean: "말리다" },
+  { nepali: "भन्नु", korean: "말하다" },
+  { nepali: "कसैको कुरा सुन्नु", korean: "말을 듣다" },
+  { nepali: "सही हुनु/प्रहार हुनु", korean: "맞다" },
+  { nepali: "मिलाउनु", korean: "맞추다" },
+  { nepali: "अवरुद्ध हुनु", korean: "막하다" },
+  { nepali: "अवरुद्ध गर्नु", korean: "막다" },
+  { nepali: "स्वादिलो हुनु", korean: "맛있다" },
+  { nepali: "स्वाद पाउनु", korean: "맛어다" },
+  { nepali: "झगडा गर्नु", korean: "말다툼하다" },
+  { nepali: "जवाफ फर्काउनु", korean: "말대꾸하다" },
+  { nepali: "स्वच्छ हुनु", korean: "맑다" },
+  { nepali: "मास्क लगाउनु", korean: "마스크를 쓰다" },
+  { nepali: "टाउको दुख्नु", korean: "머리가 아프다" },
+  { nepali: "रोक्नु/रोकिनु", korean: "멈추다" },
+  { nepali: "अनमना हुनु", korean: "멍하다" },
+  { nepali: "समय आउनु", korean: "머지가나다" },
+  { nepali: "अन्तर्वार्ता दिनु", korean: "면접을 보다" },
+  { nepali: "जम्मा गर्नु", korean: "모다" },
+  { nepali: "हटाउनु/झिक्नु", korean: "무다" },
+  { nepali: "सोध्नु", korean: "물어보다" },
+  { nepali: "मिसाउनु", korean: "무치다" },
+  { nepali: "बेवास्ता गर्नु", korean: "무시하다" },
+  { nepali: "गह्रौं हुनु", korean: "무겁다" },
+  { nepali: "डरलाग्दो हुनु", korean: "무섭다" },
+  { nepali: "मसाज गर्नु/घस्नु", korean: "문지르다" },
+  { nepali: "समस्या आउनु", korean: "문제가 생기다" },
+  { nepali: "समस्या समाधान गर्नु", korean: "문제를 해결하다" },
+  { nepali: "समस्या समाधान गर्नु", korean: "문제를 풀다" },
+  { nepali: "सोधपुछ गर्नु", korean: "문의하다" },
+  { nepali: "थाहा नपाउनु", korean: "모르다" },
+  { nepali: "संकलन गर्नु", korean: "모으다" },
+  { nepali: "जम्मा हुनु", korean: "모이다" },
+  { nepali: "विश्वास गर्नु", korean: "믿다" },
+  { nepali: "पागल हुनु/प्रभाव पार्नु", korean: "미치다" },
+  { nepali: "धकेल्नु", korean: "밀다" },
+  { nepali: "पातलो हुनु/चिप्लो हुनु", korean: "미끄럽다" },
+  { nepali: "मन नपर्नु", korean: "밉다/밉워다" },
+  { nepali: "प्लास्टर गर्नु", korean: "미장하다" },
+  { nepali: "बोक्नु", korean: "메다" },
+  { nepali: "बाँध्नु", korean: "매다" },
+  { nepali: "झुन्ड्याउनु", korean: "매달다" },
+  { nepali: "झुन्डिनु", korean: "매달리다" },
+  { nepali: "पिरो हुनु", korean: "맵다" },
+  { nepali: "व्यस्त हुनु", korean: "바쁘다" },
+  { nepali: "फेर्नु/परिवर्तन गर्नु", korean: "바꾸다" },
+  { nepali: "फेरिनु/परिवर्तित हुनु", korean: "바뀌다" },
+  { nepali: "वेवास्ता गर्नु/छोडिदिनु", korean: "방치하다" },
+  { nepali: "फेला पार्नु", korean: "발견하다" },
+  { nepali: "आशा गर्नु/चाहना गर्नु", korean: "바라다" },
+  { nepali: "लगाउनु/ठिक हुनु", korean: "바르다" },
+  { nepali: "चिप्किनु/लाग्नु", korean: "발리다" },
+  { nepali: "प्राप्त गर्नु/पाउनु", korean: "받다" },
+  { nepali: "सिक्नु", korean: "배우다" },
+  { nepali: "विकास गर्नु/प्रगति गर्नु", korean: "발전 시키다" },
+  { nepali: "विरोध गर्नु", korean: "반대하다" },
+  { nepali: "अवरोध गर्नु/डिस्टर्ब गर्नु", korean: "방해하다" },
+  { nepali: "बेपरवाह हुनु/होस गुमाउनु", korean: "방심하다" },
+  { nepali: "त्याग्नु/फाल्नु", korean: "버리다" },
+  { nepali: "उतार्नु", korean: "벗다" },
+  { nepali: "रोग लाग्नु", korean: "병이 나다" },
+  { nepali: "रोग निको हुनु", korean: "병이 낫다" },
+  { nepali: "भित्तो", korean: "벽이" },
+  { nepali: "रोगीको समाचार लिनु", korean: "병문안 하다" },
+  { nepali: "भिज्नु", korean: "젖다" },
+  { nepali: "पस्नु", korean: "마르다" },
+  { nepali: "जोड्नु", korean: "조립하다" },
+  { nepali: "टुक्र्याउनु", korean: "분해하다" },
+  { nepali: "सक्नु", korean: "조이다" },
+  { nepali: "खोल्नु", korean: "풀다" },
+  { nepali: "उल्लासपूर्ण हुनु", korean: "시끄럽다" },
+  { nepali: "शान्त हुनु", korean: "조용하다" },
+  { nepali: "संकुचित हुनु", korean: "좁다" },
+  { nepali: "व्यापक हुनु", korean: "넓다" },
+  { nepali: "चिसो हुनु", korean: "치치다" },
+  { nepali: "ताजगी हुनु", korean: "상쾌하다" },
+  { nepali: "चिसो हुनु", korean: "차갑다" },
+  { nepali: "तातो हुनु", korean: "뜨겁다" },
+  { nepali: "सही हुनु", korean: "맞다" },
+  { nepali: "गलत हुनु", korean: "틀리다" },
+  { nepali: "विश्वास गर्नु", korean: "믿다" },
+  { nepali: "धोका दिनु", korean: "배신하다" },
+  { nepali: "स्वादिलो हुनु", korean: "맛있다" },
+  { nepali: "स्वादविहीन हुनु", korean: "맛없다" },
+  { nepali: "व्यस्त हुनु", korean: "바쁘다" },
+  { nepali: "फुर्सदिलो हुनु", korean: "한가하다" },
+  { nepali: "पठाउनु", korean: "보내다" },
+  { nepali: "प्राप्त गर्नु", korean: "받다" },
+  { nepali: "भोक लाग्नु", korean: "배고프다" },
+  { nepali: "पेट भरिएको हुनु", korean: "배부르다" },
+  { nepali: "कम हुनु", korean: "부족하다" },
+  { nepali: "पर्याप्त हुनु", korean: "충분하다" },
+  { nepali: "विरोध गर्नु", korean: "반대하다" },
+  { nepali: "सहयोग गर्नु", korean: "지지하다" },
+  { nepali: "मोटा हुनु", korean: "뚱뚱하다" },
+  { nepali: "पातलो हुनु", korean: "날씬하다" },
+  { nepali: "समान हुनु", korean: "똑같다" },
+  { nepali: "फरक हुनु", korean: "다르다" },
+  { nepali: "सस्तो हुनु", korean: "싸다" },
+  { nepali: "महँगो हुनु", korean: "비싸다" },
+  { nepali: "झगडा गर्नु", korean: "싸우다" },
+  { nepali: "सुलह गर्नु", korean: "화해하다" },
+  { nepali: "जमाउनु", korean: "쌓다" },
+  { nepali: "विनाश गर्नु", korean: "허물다" },
+  { nepali: "चिसो हुनु", korean: "쌀쌀하다" },
+  { nepali: "स्वादिष्ट हुनु", korean: "맛뜻하다" },
+  { nepali: "पछ्याउनु", korean: "쫓다" },
+  { nepali: "भाग्नु", korean: "달아나다" },
+  { nepali: "सजिलो हुनु", korean: "쉽다" },
+  { nepali: "गाह्रो हुनु", korean: "어렵다" },
+  { nepali: "सफल हुनु", korean: "성공되다" },
+  { nepali: "असफल हुनु", korean: "실패되다" },
+  { nepali: "धक्केर अगाडि जानु", korean: "새치기 하다" },
+  { nepali: "मोटो हुनु", korean: "살찌다" },
+  { nepali: "पंक्तिको पर्खाइ गर्नु", korean: "차례를 기다리다" },
+  { nepali: "पातलो हुनु", korean: "살빠지다" },
+  { nepali: "रोगी हुनु", korean: "아프다" },
+  { nepali: "निको हुनु", korean: "낫다" },
+  { nepali: "हास्नु", korean: "웃다" },
+  { nepali: "रुनु", korean: "울다" },
+  { nepali: "हुने", korean: "있다" },
+  { nepali: "नहुने", korean: "없다" },
+  { nepali: "गुमाउनु", korean: "잃다" },
+  { nepali: "पत्ता लगाउनु", korean: "찾다" },
+  { nepali: "थाहा हुनु", korean: "알다" },
+  { nepali: "थाहा नहुने", korean: "모르다" },
+  { nepali: "पल्टिनु", korean: "눕다" },
+  { nepali: "पाटो तल गर्नु", korean: "엎드리다" },
+  { nepali: "दुःखिलो हुनु", korean: "아련하다" },
+  { nepali: "गाढा हुनु", korean: "진하다" },
+  { nepali: "खतरा हुनु", korean: "위험하다" },
+  { nepali: "सुरक्षित हुनु", korean: "안전하다" },
+  { nepali: "साहसी हुनु", korean: "용감하다" },
+  { nepali: "सङ्कुचित हुनु", korean: "소심하다" },
+  { nepali: "हस्पिटलमा भर्ना हुनु", korean: "입원하다" },
+  { nepali: "हस्पिटलबाट बाहिर निस्कनु", korean: "퇴원하다" },
+  { nepali: "उचो हुनु", korean: "높다" },
+  { nepali: "नीचो हुनु", korean: "낮다" },
+  { nepali: "अनजान हुनु", korean: "낯설다" },
+  { nepali: "चिनो हुनु", korean: "낯익다" },
+  { nepali: "पुरानो हुनु", korean: "낡다" },
+  { nepali: "नयाँ हुनु", korean: "새롭다" },
+  { nepali: "बर्बाद गर्नु", korean: "낭비하다" },
+  { nepali: "बचत गर्नु", korean: "절약하다" },
+  { nepali: "धैर्यवान हुनु", korean: "느긋하다" },
+  { nepali: "अविचारशील हुनु", korean: "성급하다" },
+  { nepali: "बन्द गर्नु", korean: "닫다" },
+  { nepali: "खोल्नु", korean: "열다" },
+  { nepali: "सहमत हुनु", korean: "동의하다" },
+  { nepali: "इन्कार गर्नु", korean: "거부하다" },
+  { nepali: "घाइते हुनु", korean: "다치다" },
+  { nepali: "ठीक हुनु", korean: "멀쩡하다" },
+  { nepali: "स्पष्ट हुनु", korean: "맑다" },
+  { nepali: "धुंधलाउनु", korean: "흐리다" },
+  { nepali: "सन्तुष्ट हुनु", korean: "만족하다" },
+  { nepali: "असन्तुष्ट हुनु", korean: "불만족하다" },
+  { nepali: "अस्पष्ट हुनु", korean: "막연하다" },
+  { nepali: "स्पष्ट हुनु", korean: "분명하다" },
+  { nepali: "धेरै हुनु", korean: "많다" },
+  { nepali: "थोरै हुनु", korean: "적다" },
+  { nepali: "नोकरीमा प्रवेश गर्नु", korean: "입사하다" },
+  { nepali: "नोकरीबाट बाहिर जानु", korean: "퇴사하다" },
+  { nepali: "कडा हुनु", korean: "엄격하다" },
+  { nepali: "शान्त हुनु", korean: "얌전하다" },
+  { nepali: "जित्नु", korean: "이기다" },
+  { nepali: "हार्नु", korean: "지다" },
+  { nepali: "सुत्नु", korean: "자다" },
+  { nepali: "उठ्नु", korean: "일어나다" },
+  { nepali: "पक्रिनु", korean: "잡다" },
+  { nepali: "छोड्नु", korean: "놓다" },
+  { nepali: "सावधान हुनु", korean: "조심하다" },
+  { nepali: "लापरवाही गर्नु", korean: "방심하다" },
+  { nepali: "गन्दो हुनु", korean: "지저분하다" },
+  { nepali: "स्वच्छ हुनु", korean: "깨끗하다" },
+  { korean: "바르다", nepali: "लगाउनु/ठिक हुनु" },
+  { korean: "발리다", nepali: "चिप्किनु/लाग्नु" },
+  { korean: "받다", nepali: "प्राप्त गर्नु/पाउनु" },
+  { korean: "배우다", nepali: "सिक्नु" },
+  { korean: "발전 시키다", nepali: "विकास गर्नु/प्रगति गर्नु" },
+  { korean: "반대하다", nepali: "विरोध गर्नु" },
+  { korean: "방해하다", nepali: "अवरोध गर्नु/डिस्टर्ब गर्नु" },
+  { korean: "방심하다", nepali: "बेपरवाह हुनु/होस गुमाउनु" },
+  { korean: "버리다", nepali: "त्याग्नु/फाल्नु" },
+  { korean: "벗다", nepali: "उतार्नु" },
+  { korean: "병이 나다", nepali: "रोग लाग्नु" },
+  { korean: "병이 낫다", nepali: "रोग निको हुनु" },
+  { korean: "보내다", nepali: "पठाउनु" },
+  { korean: "보답하다", nepali: "जवाफ दिनु/प्रतिकार गर्नु" },
+  { korean: "보다", nepali: "हेर्नु" },
+  { korean: "보여주다", nepali: "देखाउनु" },
+  { korean: "보이다", nepali: "देखिनु" },
+  { korean: "볶다", nepali: "भुट्नु/भुटेर पकाउनु" },
+  { korean: "베기다", nepali: "काट्नु/घाँटीमा टेक्नु" },
+  { korean: "뵙다", nepali: "भेट्नु (आदर सूचक)" },
+  { korean: "부르다", nepali: "बोलाउनु/गाउनु" },
+  { korean: "배고프다", nepali: "भोक लाग्नु" },
+  { korean: "배부르다", nepali: "पेट भरिनु" },
+  { korean: "바람이 불다", nepali: "हावा चल्नु" },
+  { korean: "부끄럽다", nepali: "लाज लाग्नु" },
+  { korean: "부드럽다", nepali: "नरम हुनु" },
+  { korean: "부이다", nepali: "देखिनु/देखाउनु" },
+  { korean: "빌리다", nepali: "धेरै गर्नु/धेरै माग्नु" },
+  { korean: "빌려주다", nepali: "धेरै दिनु" },
+  { korean: "부리러하다", nepali: "कर्मगार प्रयोग गर्नु" },
+  { korean: "부자가 되다", nepali: "धनी बन्नु" },
+  { korean: "부족하다", nepali: "अभाव हुनु/कम हुनु" },
+  { korean: "불가능하다", nepali: "असंभव हुनु" },
+  { korean: "불길하다", nepali: "अशुभ हुनु" },
+  { korean: "불편하다", nepali: "असजिलो हुनु" },
+  { korean: "불이 나다", nepali: "आगो लाग्नु" },
+  { korean: "불을 끄다", nepali: "आगो निभाउनु" },
+  { korean: "비우다", nepali: "खाली गर्नु" },
+  { korean: "비키다", nepali: "बाटो दिनु/सर्नु" },
+  { korean: "부딪히다", nepali: "ठोक्किनु/ठक्कर खानु" },
+  { korean: "복잡하다", nepali: "जटिल हुनु" },
+  { korean: "배달하다", nepali: "वितरण गर्नु" },
+  { korean: "분리하다", nepali: "अलग गर्नु/विभाजित गर्नु" },
+  { korean: "부탁하다", nepali: "अनुरोध गर्नु" },
+  { korean: "보호하다", nepali: "सुरक्षा गर्नु" },
+  { korean: "배신하다", nepali: "धोका दिनु" },
+  { korean: "복습하다", nepali: "पुनः अध्ययन गर्नु" },
+  { korean: "부러뜨리다", nepali: "भाँच्नु" },
+  { korean: "부러지다", nepali: "भाँचिनु" },
+  { korean: "보관하다", nepali: "सुरक्षित राख्नु/भण्डारण गर्नु" },
+  { korean: "사다", nepali: "किन्नु" },
+  { korean: "사고팔다", nepali: "किनबेच गर्नु" },
+  { korean: "서다", nepali: "उभिनु" },
+  { korean: "사라지다", nepali: "हराउनु/अदृश्य हुनु" },
+  { korean: "수리하다", nepali: "मर्मत गर्नु" },
+  { korean: "신다", nepali: "जूता लगाउनु" },
+  { korean: "신발을 신다", nepali: "जूता लगाउनु" },
+  { korean: "신발을 벗다", nepali: "जूता खोल्नु" },
+  { korean: "살다", nepali: "बसोबास गर्नु/बाँच्नु" },
+  { korean: "살리다", nepali: "बचाउनु" },
+  { korean: "직다", nepali: "सिधा गर्नु" },
+  { korean: "식히다", nepali: "चिसो पार्नु" },
+  { korean: "시키다", nepali: "आदेश दिनु/गराउनु" },
+  { korean: "시험을 보다", nepali: "परीक्षा दिनु" },
+  { korean: "시험을 치다", nepali: "परीक्षा दिनु" },
+  { korean: "새다", nepali: "चुहिनु" },
+  { korean: "세다", nepali: "गन्नु" },
+  { korean: "사진을 찍다", nepali: "फोटो खिच्नु" },
+  { korean: "사진을 인화하다", nepali: "फोटो प्रिन्ट गर्नु" },
+  { korean: "새기다", nepali: "कुद्नु/कोर्नु" },
+  { korean: "새롭다", nepali: "नयाँ हुनु" },
+  { korean: "송출하다", nepali: "प्रसारण गर्नु" },
+  { korean: "속하다", nepali: "सम्बन्धित हुनु" },
+  { korean: "사랑하다", nepali: "माया गर्नु" },
+  { korean: "살인하다", nepali: "हत्या गर्नु" },
+  { korean: "시작하다", nepali: "सुरु गर्नु" },
+  { korean: "실수하다", nepali: "गल्ती गर्नु" },
+  { korean: "심심하다", nepali: "दिक्क लाग्नु" },
+  { korean: "쉬다", nepali: "आराम गर्नु" },
+  { korean: "숨을 쉬다", nepali: "सास फेर्नु" },
+  { korean: "쉽다", nepali: "सजिलो हुनु" },
+  { korean: "승진하다", nepali: "पदोन्नति हुनु" },
+  { korean: "승리하다", nepali: "जित्नु" },
+  { korean: "숨다", nepali: "लुक्नु" },
+  { korean: "숨기다", nepali: "लुकाउनु" },
+  { korean: "소심하다", nepali: "संकोची हुनु" },
+  { korean: "사기치다", nepali: "ठगी गर्नु" },
+  { korean: "사용하다", nepali: "प्रयोग गर्नु" },
+  { korean: "선택하다", nepali: "चयन गर्नु" },
+  { korean: "손해보다", nepali: "घाटा व्यहोर्नु" },
+  { korean: "슬프다", nepali: "दुखी हुनु" },
+  { korean: "시끄럽다", nepali: "होहल्ला हुनु/गडबड हुनु" },
+  { korean: "싫다/싫어하다", nepali: "नपसन्द हुनु" },
+  { korean: "서두르다", nepali: "हतार गर्नु" },
+  { korean: "서툴다/서투르다", nepali: "अनभ्यस्त हुनु/अकुशल हुनु" },
+  { korean: "실신하다", nepali: "बेहोस हुनु" },
+  { korean: "오다", nepali: "आउनु" },
+  { korean: "아프다", nepali: "दुख्नु/पीडा हुनु" },
+  { korean: "웃다", nepali: "हास्नु" },
+  { korean: "우기다", nepali: "जिद्दी गर्नु" },
+  { korean: "울다", nepali: "रुनु" },
+  { korean: "읽다", nepali: "पढ्नु" },
+  { korean: "이를 닦다/양치질하다", nepali: "दाँत माझ्नु" },
+  { korean: "얻다", nepali: "प्राप्त गर्नु" },
+  { korean: "있다", nepali: "हुुनु/रहनु" },
+  { korean: "없다", nepali: "नहुनु/अनुपस्थित हुनु" },
+  { korean: "이다", nepali: "हो/छ" },
+  { korean: "입다", nepali: "लगाउनु" },
+  { korean: "일을 하다", nepali: "काम गर्नु" },
+  { korean: "일을 끝내다", nepali: "काम समाप्त गर्नु" },
+  { korean: "일을 그만두다", nepali: "काम छोड्नु" },
+  { korean: "아름답다", nepali: "सुन्दर हुनु" },
+  { korean: "잃다/잃어버리다", nepali: "गुमाउनु/हराउनु" },
+  { korean: "잊다/잊어버리다", nepali: "भुल्नु" },
+  { korean: "알다", nepali: "थाहा पाउनु/जान्नु" },
+  { korean: "알아듣다", nepali: "बुझ्नु/सुनेर थाहा पाउनु" },
+  { korean: "알아보다", nepali: "थाहा पाउन खोज्नु/पत्ता लगाउनु" },
+  { korean: "열다", nepali: "खोल्नु" },
+  { korean: "열리다", nepali: "खुल्नु" },
+  { korean: "열받다", nepali: "रिस उठ्नु/झोक चल्नु" },
+  { korean: "싱싱하다", nepali: "ताजा हुनु" },
+  { korean: "신성하다", nepali: "पवित्र हुनु" },
+  { korean: "심다", nepali: "रोप्नु/ब्याड राख्नु" },
+  { korean: "삼키다", nepali: "निल्नु" },
+  { korean: "삶다", nepali: "उबाल्नु" },
+  { korean: "소중하다", nepali: "महत्त्वपूर्ण हुनु" },
+  { korean: "상쾌하다", nepali: "फ्रेस/प्रसन्न हुनु" },
+  { korean: "성진을 내다", nepali: "उन्नति गर्नु" },
+  { korean: "신비하다", nepali: "रहस्यमय हुनु" },
+  { korean: "심각하다", nepali: "गम्भीर हुनु" },
+  { korean: "사고가 나다", nepali: "दुर्घटना हुनु" },
+  { korean: "사망하다", nepali: "मृत्यु हुनु" },
+  { korean: "수축하다", nepali: "संकुचित हुनु" },
+  { korean: "살찌다", nepali: "मोटो हुनु" },
+  { korean: "살빠지다", nepali: "दुब्लाउनु" },
+  { korean: "상담하다", nepali: "परामर्श गर्नु" },
+  { korean: "실시하다", nepali: "कार्यान्वयन गर्नु" },
+  { korean: "시도하다", nepali: "प्रयास गर्नु" },
+  { korean: "시동을 걸다", nepali: "इन्जिन सुरू गर्नु" },
+  { korean: "소화하다", nepali: "पाचन गर्नु" },
+  { korean: "소트하다", nepali: "छान्नु/बाँड्नु" },
+  { korean: "앉다", nepali: "बस्नु" },
+  { korean: "일어나다", nepali: "उठ्नु" },
+  { korean: "왔다 갔다하다", nepali: "आउजाउ गर्नु" },
+  { korean: "학생", nepali: "विद्यार्थी" },
+  { korean: "닭", nepali: "कुखुरा" },
+  { korean: "여우", nepali: "लोमडी" },
+  { korean: "개미", nepali: "कमिला" },
+  { korean: "우유", nepali: "दूध" },
+  { korean: "오이", nepali: "काँक्रो" },
+  { korean: "신문", nepali: "समाचारपत्र" },
+  { korean: "아기", nepali: "शिशु/बच्चा" },
+  { korean: "복습하다", nepali: "पुनः अभ्यास गर्नु" },
+  { korean: "부러뜨리다", nepali: "भाँच्नु" },
+  { korean: "부러지다", nepali: "भाँचिनु" },
+  { korean: "보관하다", nepali: "सुरक्षित राख्नु/भण्डारण गर्नु" },
+  { korean: "사다", nepali: "किन्नु" },
+  { korean: "사고팔다", nepali: "किनबेच गर्नु" },
+  { korean: "서다", nepali: "उभिनु" },
+  { korean: "사라지다", nepali: "हराउनु" },
+  { korean: "섞다", nepali: "मिसाउनु" },
+  { korean: "섞이다", nepali: "मिसिनु" },
+  { korean: "수리하다", nepali: "मर्मत गर्नु" },
+  { korean: "신다", nepali: "जूता लगाउनु" },
+  { korean: "신발을 신다", nepali: "जूता लगाउनु" },
+  { korean: "신발을 벗다", nepali: "जूता खोल्नु" },
+  { korean: "살다", nepali: "बाँच्नु/बस्नु" },
+  { korean: "살리다", nepali: "बचाउनु" },
+  { korean: "직다", nepali: "छोटो हुनु" },
+  { korean: "식히다", nepali: "चिसो पार्नु" },
+  { korean: "시키다", nepali: "गराउनु" },
+  { korean: "시험을 보다/시험을 치다", nepali: "परीक्षा दिनु" },
+  { korean: "새다", nepali: "रसाउनु" },
+  { korean: "세다", nepali: "गन्नु" },
+  { korean: "사진을 찍다", nepali: "फोटो खिच्नु" },
+  { korean: "사진을 인화하다", nepali: "फोटो प्रिन्ट गर्नु" },
+  { korean: "새기다", nepali: "खोप्नु/नक्काशी गर्नु" },
+  { korean: "새롭다", nepali: "नयाँ हुनु" },
+  { korean: "송출하다", nepali: "प्रसारण गर्नु" },
+  { korean: "속하다", nepali: "सम्बन्धित हुनु" },
+  { korean: "사랑하다", nepali: "माया गर्नु" },
+  { korean: "살인하다", nepali: "हत्या गर्नु" },
+  { korean: "시작하다", nepali: "सुरु गर्नु" },
+  { korean: "실수하다", nepali: "गल्ती गर्नु" },
+  { korean: "심심하다", nepali: "धेरै फुर्सदिलो हुनु" },
+  { korean: "쉬다", nepali: "आराम गर्नु" },
+  { korean: "숨을 쉬다", nepali: "सास फेर्नु" },
+  { korean: "쉽다", nepali: "सजिलो हुनु" },
+  { korean: "수진하다", nepali: "अगाडि बढ्नु" },
+  { korean: "숨다", nepali: "लुक्नु" },
+  { korean: "승리하다", nepali: "जीत्नु" },
+  { korean: "숨기다", nepali: "लुकाउनु" },
+  { korean: "소심하다", nepali: "लोचदार हुनु/कम आत्मविश्वासी हुनु" },
+  { korean: "사기치다", nepali: "ठगी गर्नु" },
+  { korean: "사용하다", nepali: "प्रयोग गर्नु" },
+  { korean: "서택하다", nepali: "छान्नु/चयन गर्नु" },
+  { korean: "손해보다", nepali: "नोक्सान बेहोर्नु" },
+  { korean: "슬프다", nepali: "दुःखी हुनु" },
+  { korean: "시끄럽다", nepali: "होहल्ला हुनु/शोर हुनु" },
+  { korean: "싫다/싫어하다", nepali: "मन नपर्नु" },
+  { korean: "서두르다", nepali: "हतार गर्नु" },
+  { korean: "서툴다/서투르다", nepali: "अनाडी हुनु" },
+  { korean: "실신하다", nepali: "बेहोस हुनु" },
+  { korean: "싱싱하다", nepali: "ताजा हुनु" },
+  { korean: "신성하다", nepali: "पवित्र हुनु" },
+  { korean: "심다", nepali: "रोप्नु" },
+  { korean: "삼키다", nepali: "निगाल्नु" },
+  { korean: "삶다", nepali: "उबाल्नु" },
+  { korean: "시다하다", nepali: "सुरु गर्नु" },
+  { korean: "소중하다", nepali: "महत्त्वपूर्ण हुनु" },
+  { korean: "상쾌하다", nepali: "फ्रेस/ताजा महसुस गर्नु" },
+  { korean: "성진을 내다", nepali: "प्रगति गर्नु" },
+  { korean: "신비하다", nepali: "रहस्यमय हुनु" },
+  { korean: "심각하다", nepali: "गम्भीर हुनु" },
+  { korean: "사고가 나다", nepali: "दुर्घटना हुनु" },
+  { korean: "사망하다", nepali: "मर्नु/निधन हुनु" },
+  { korean: "수축하다", nepali: "संकुचित हुनु" },
+  { korean: "살찌다", nepali: "मोटो हुनु" },
+  { korean: "살빠지다", nepali: "पातलो हुनु" },
+  { korean: "상담하다", nepali: "परामर्श गर्नु" },
+  { korean: "실시하다", nepali: "कार्यान्वयन गर्नु" },
+  { korean: "시동을 걸다", nepali: "इन्जिन सुरु गर्नु" },
+  { korean: "시도하다", nepali: "कोशिश गर्नु" },
+  { korean: "앉다", nepali: "बस्नु" },
+  { korean: "일어나다", nepali: "उठ्नु" },
+  { korean: "왔다 갔다하다", nepali: "ओहोरदोहोर गर्नु" },
+  { korean: "소화하다", nepali: "पाचन गर्नु" },
+  { korean: "소드하다", nepali: "छानबिन गर्नु" },
+  { korean: "오다", nepali: "आउनु" },
+  { korean: "아프다", nepali: "दुख्नु/पीडा हुनु" },
+  { korean: "우다", nepali: "रुनु" },
+  { korean: "우기다", nepali: "जिद्दी गर्नु" },
+  { korean: "울다", nepali: "रुनु" },
+  { korean: "울기다", nepali: "रुन लगाउनु" },
+  { korean: "읽다", nepali: "पढ्नु" },
+  { korean: "이를 닦다/양치절하다", nepali: "दाँत माझ्नु" },
+  { korean: "얻다", nepali: "प्राप्त गर्नु" },
+  { korean: "있다", nepali: "छ/हुन्छ" },
+  { korean: "어다", nepali: "लिनु" },
+  { korean: "이다", nepali: "हो/अर्थ" },
+  { korean: "입다", nepali: "लगाउनु" },
+  { korean: "일을 시작하다", nepali: "काम सुरु गर्नु" },
+  { korean: "일을 하다", nepali: "काम गर्नु" },
+  { korean: "일을 끝내다", nepali: "काम समाप्त गर्नु" },
+  { korean: "일을 그만두다", nepali: "काम छोड्नु" },
+  { korean: "아름답다", nepali: "सुन्दर हुनु" },
+  { korean: "잃다/잃어버리다", nepali: "हराउनु" },
+  { korean: "잊다/잊어버리다", nepali: "भुल्नु" },
+  { korean: "알다", nepali: "थाहा पाउनु" },
+  { korean: "알아듣다", nepali: "बुझ्नु" },
+  { korean: "알아보다", nepali: "पत्ता लगाउनु/चिन्नु" },
+  { korean: "열다", nepali: "खोल्नु" },
+  { korean: "열리다", nepali: "खुल्नु" },
+  { korean: "열받다", nepali: "रिसाउनु/क्रोधित हुनु" },
+  { korean: "열이 나다", nepali: "ज्वरो आउनु" },
+  { korean: "오르다", nepali: "चढ्नु/बढ्नु" },
+  { korean: "올리다", nepali: "माथि उठाउनु/बढाउनु" },
+  { korean: "어울리다", nepali: "मेल खानु/सूट हुनु" },
+  { korean: "입다", nepali: "लगाउनु" },
+  { korean: "엎드리다", nepali: "घोप्टो बस्नु/सुत्नु" },
+  { korean: "애쓰다", nepali: "कोसिस गर्नु/मेहनत गर्नु" },
+  { korean: "어렵다", nepali: "गाह्रो हुनु" },
+  { korean: "익숙하다", nepali: "परिचित हुनु/निपूर्ण हुनु" },
+  { korean: "이겨내다", nepali: "जित्नु/पार गर्नु" },
+  { korean: "익다", nepali: "पाक्नु/सिक्न पुग्नु" },
+  { korean: "이기다", nepali: "जित्नु" },
+  { korean: "이익을 보다", nepali: "फाइदा लिनु" },
+  { korean: "엄치가 없다", nepali: "सम्भावना नभएको" },
+  { korean: "요청하다", nepali: "माग गर्नु/अनुरोध गर्नु" },
+  { korean: "운전하다", nepali: "गाडी चलाउनु" },
+  { korean: "운동하다", nepali: "व्यायाम गर्नु" },
+  { korean: "운송하다", nepali: "ढुवानी गर्नु" },
+  { korean: "운영하다", nepali: "संचालन गर्नु" },
+  { korean: "웅크리다", nepali: "गुच्चो बस्नु" },
+  { korean: "움직이다", nepali: "हल्लिनु/चल्नु" },
+  { korean: "유래되다", nepali: "मूल भएको/उत्पत्ति भएको" },
+  { korean: "위험하다", nepali: "खतरनाक हुनु" },
+  { korean: "연주하다", nepali: "वाद्ययन्त्र बजाउनु" },
+  { korean: "연날리다", nepali: "चङ्गा उडाउनु" },
+  { korean: "연기하다", nepali: "पोस्टपोन गर्नु/पछाडि सार्नु" },
+  { korean: "연락하다", nepali: "सम्पर्क गर्नु" },
+  { korean: "자다", nepali: "सुत्नु" },
+  { korean: "잠이 들다", nepali: "निन्द्रा लाग्नु/सुत्न सुरु गर्नु" },
+  { korean: "재우다", nepali: "सुताउनु" },
+  { korean: "자르다", nepali: "काट्नु" },
+  { korean: "잘리다", nepali: "छिन्नु/नोकरीबाट निकालिनु" },
+  { korean: "잘하다", nepali: "राम्ररी गर्नु" },
+  { korean: "잘 먹다", nepali: "राम्ररी खानु" },
+  { korean: "잘보다", nepali: "राम्ररी हेर्नु/ध्यान दिनु" },
+  { korean: "잘 듣다", nepali: "राम्ररी सुन्नु" },
+  { korean: "잡다", nepali: "पकड्नु" },
+  { korean: "잡히다", nepali: "पक्राउ पर्नु/पकडिनु" },
+  { korean: "적다", nepali: "लेख्नु" },
+  { korean: "작다", nepali: "सानो हुनु" },
+  { korean: "정리하다", nepali: "व्यवस्थित गर्नु" },
+  { korean: "안경", nepali: "चश्मा" },
+  { korean: "간식", nepali: "खाजा" },
+  { korean: "공구", nepali: "उपकरण/टूल" },
+  { korean: "감다", nepali: "बन्द गर्नु/कपाल धोउनु" },
+  { korean: "월급", nepali: "मासिक तलब" },
+  { korean: "박수", nepali: "ताली" },
+  { korean: "방심", nepali: "ध्यान नदिनु/लापरबाही गर्नु" },
+  { korean: "가끔", nepali: "कहिलेकाहीँ" },
+  { korean: "벽돌", nepali: "इटा" },
+  { korean: "해외", nepali: "विदेश" },
+  { korean: "유학을 가다", nepali: "अध्ययनको लागि विदेश जानु" },
+  { korean: "빨래를 하다", nepali: "लुगा धुनु" },
+  { korean: "상처", nepali: "घाउ" },
+  { korean: "연고", nepali: "मलम" },
+  { korean: "연기하다", nepali: "पोस्टपोन गर्नु/पछाडि सार्नु" },
+  { korean: "연락하다", nepali: "सम्पर्क गर्नु" },
+  { korean: "자다", nepali: "सुत्नु" },
+  { korean: "잠이 들다", nepali: "निन्द्रा लाग्नु/सुत्न सुरु गर्नु" },
+  { korean: "재우다", nepali: "सुताउनु" },
+  { korean: "자르다", nepali: "काट्नु" },
+  { korean: "잘리다", nepali: "छिन्नु/नोकरीबाट निकालिनु" },
+  { korean: "잘하다", nepali: "राम्ररी गर्नु" },
+  { korean: "잘 먹다", nepali: "राम्ररी खानु" },
+  { korean: "잘보다", nepali: "राम्ररी हेर्नु/ध्यान दिनु" },
+  { korean: "잘 듣다", nepali: "राम्ररी सुन्नु" },
+  { korean: "잡다", nepali: "पकड्नु" },
+  { korean: "잡히다", nepali: "पक्राउ पर्नु/पकडिनु" },
+  { korean: "적다", nepali: "लेख्नु" },
+  { korean: "작다", nepali: "सानो हुनु" },
+  { korean: "정리하다", nepali: "व्यवस्थित गर्नु" },
+  { korean: "안경", nepali: "चश्मा" },
+  { korean: "간식", nepali: "खाजा" },
+  { korean: "공구", nepali: "उपकरण/टूल" },
+  { korean: "감다", nepali: "बन्द गर्नु/कपाल धोउनु" },
+  { korean: "월급", nepali: "मासिक तलब" },
+  { korean: "박수", nepali: "ताली" },
+  { korean: "방심", nepali: "ध्यान नदिनु/लापरबाही गर्नु" },
+  { korean: "가끔", nepali: "कहिलेकाहीँ" },
+  { korean: "벽돌", nepali: "इटा" },
+  { korean: "해외", nepali: "विदेश" },
+  { korean: "표", nepali: "टिकट/सूची" },
+  { korean: "여행", nepali: "यात्रा" },
+  { korean: "상상하다", nepali: "कल्पना गर्नु" },
+  { korean: "옆/결", nepali: "छेउमा/साइडमा" },
+  { korean: "근처 근방", nepali: "नजिकै/वरिपरि" },
+  { korean: "주변", nepali: "आसपास/वरपर" },
+  { korean: "가까이", nepali: "नजिकै" },
+  { korean: "멀리", nepali: "टाढा" },
+  { korean: "가운데", nepali: "बीचमा" },
+  { korean: "주아", nepali: "छेउछाउ" },
+  { korean: "사이", nepali: "बीचको ठाउँ/अन्तर" },
+  { korean: "맞은편/건너편", nepali: "अर्को पट्टि/सामुन्ने" },
+  { korean: "똑바로", nepali: "सोझो" },
+  { korean: "거꾸로", nepali: "उल्टो" },
+  { korean: "아무데나", nepali: "जसरी भए पनि/कसै ठाउँमा पनि" },
+  { korean: "정하다", nepali: "तोक्नु/निर्णय गर्नु" },
+  { korean: "정확하다", nepali: "सही हुनु/सटीक हुनु" },
+  { korean: "조사하다", nepali: "जाँच गर्नु/अनुसन्धान गर्नु" },
+  { korean: "조심하다", nepali: "सावधान हुनु" },
+  { korean: "전화를 하다/전화를 걸다", nepali: "फोन गर्नु/कल गर्नु" },
+  { korean: "전화를 받다", nepali: "फोन उठाउनु" },
+  { korean: "전화를 끊다", nepali: "फोन काट्नु/समाप्त गर्नु" },
+  { korean: "졸업하다", nepali: "स्नातक गर्नु" },
+  { korean: "조립하다", nepali: "जोड्नु/सम्पुटन गर्नु" },
+  { korean: "좋다", nepali: "राम्रो हुनु" },
+  { korean: "좋아하다", nepali: "मनपराउनु" },
+  { korean: "주다", nepali: "दिनु" },
+  { korean: "주고 받다", nepali: "दिनु र लिनु" },
+  { korean: "죽다", nepali: "मर्नु" },
+  { korean: "죽이다", nepali: "मार्नु" },
+  { korean: "자살하다", nepali: "आत्महत्या गर्नु" },
+  { korean: "주문하다", nepali: "अर्डर गर्नु" },
+  { korean: "주문을 받다", nepali: "अर्डर प्राप्त गर्नु" },
+  { korean: "주차하다", nepali: "गाडी पार्क गर्नु" },
+  { korean: "준비하다", nepali: "तयार गर्नु" },
+  { korean: "줄다", nepali: "घट्नु" },
+  { korean: "줄이다", nepali: "घटाउनु" },
+  { korean: "주사를 놓다", nepali: "सुई लगाउनु" },
+  { korean: "주사를 맞다", nepali: "सुई लगाउनु पाउनु" },
+  { korean: "즐기다", nepali: "आनन्द लिनु" },
+  { korean: "즐겁다", nepali: "आनन्ददायक हुनु" },
+  { korean: "장난 차다", nepali: "मजाक गर्नु" },
+  { korean: "지나다", nepali: "बित्नु/पार गर्नु" },
+  { korean: "질문하다", nepali: "प्रश्न गर्नु" },
+  { korean: "지래다", nepali: "गल्ती गर्नु/विवेक गुमाउनु" },
+  { korean: "지다", nepali: "हार्नु" },
+  { korean: "근로자", nepali: "श्रमिक" },
+  { korean: "수다하다", nepali: "गफ गर्नु" },
+  { korean: "짐", nepali: "सामान/बोझ" },
+  { korean: "떠들다", nepali: "कराउनु/हल्ला गर्नु" },
+  { korean: "저녁", nepali: "साँझ/डिनर" },
+  { korean: "숙제", nepali: "गृहकार्य" },
+  { korean: "잘", nepali: "राम्ररी" },
+  { korean: "직원", nepali: "कर्मचारी" },
+  { korean: "지내지다", nepali: "बिताउनु" },
+  { korean: "별로", nepali: "त्यति धेरै होइन" },
+  { korean: "두다", nepali: "राख्नु" },
+  { korean: "수업", nepali: "कक्षा" },
+  { korean: "기독교인", nepali: "क्रिश्चियन/ईसाई" },
+  { korean: "일찍", nepali: "छिटो/समयभन्दा पहिले" },
+  { korean: "다시", nepali: "फेरि" },
+  { korean: "노력하다", nepali: "प्रयास गर्नु" },
+  { korean: "처음", nepali: "पहिलो पटक" },
+  { korean: "마지막", nepali: "अन्तिम" },
+  { korean: "지금 현재", nepali: "अहिले/हाल" },
+  { korean: "순간", nepali: "क्षण/पल" },
+  { korean: "세월", nepali: "समय" },
+  { korean: "도시", nepali: "शहर" },
+  { korean: "이제", nepali: "अब" },
+  { korean: "지겹다", nepali: "दिक्क लाग्ने" },
+  { korean: "지다", nepali: "हार्नु/झर्नु" },
+  { korean: "짖다", nepali: "भुक्नु (कुकुरले)" },
+  { korean: "지저분하다", nepali: "फोहोर हुनु" },
+  { korean: "질투하다", nepali: "ईर्ष्या गर्नु" },
+  { korean: "저다", nepali: "जोत्नु/फर्काउनु" },
+  { korean: "질식하다", nepali: "निस्सासिनु" },
+  { korean: "초이다", nepali: "ताप्नु/सुकाउनु" },
+  { korean: "작성하다", nepali: "लेख्नु/तयार गर्नु" },
+  { korean: "장석하다", nepali: "उपस्थित हुनु/सजाउनु" },
+  { korean: "재다", nepali: "नाप्नु/मापन गर्नु" },
+  { korean: "지각하다", nepali: "ढिला हुनु" },
+  { korean: "정치를 하다", nepali: "राजनीति गर्नु" },
+  { korean: "징그럽다", nepali: "घिनलाग्दो हुनु" },
+  { korean: "중요하다", nepali: "महत्त्वपूर्ण हुनु" },
+  { korean: "자유롭다", nepali: "स्वतन्त्र हुनु" },
+  { korean: "조용하다", nepali: "शान्त हुनु" },
+  { korean: "지우다", nepali: "मेट्नु" },
+  { korean: "잠그다", nepali: "बन्द गर्नु/लक गर्नु" },
+  { korean: "졸다", nepali: "झुसुक्क निदाउनु" },
+  { korean: "의문", nepali: "शंका/प्रश्न" },
+  { korean: "뭐/무엇", nepali: "के" },
+  { korean: "무엇으로", nepali: "केबाट/केले" },
+  { korean: "누구", nepali: "को/कसले" },
+  { korean: "누구를/누구에게", nepali: "कसलाई" },
+  { korean: "누구의", nepali: "कसको" },
+  { korean: "노동고", nepali: "श्रम/मजदुरी" },
+  { korean: "소화기", nepali: "अग्नि निभाउने यन्त्र" },
+  { korean: "생일", nepali: "जन्मदिन" },
+  { korean: "복습하다", nepali: "पुनः अभ्यास गर्नु" },
+  { korean: "부러뜨리다", nepali: "भाँच्नु" },
+  { korean: "부러지다", nepali: "भाँचिनु" },
+  { korean: "보관하다", nepali: "सुरक्षित राख्नु/भण्डारण गर्नु" },
+  { korean: "공휴일", nepali: "सार्वजनिक छुट्टी" },
+  { korean: "갖고오다", nepali: "लिई आउनु" },
+  { korean: "식구", nepali: "परिवारका सदस्य" },
+  { korean: "종교", nepali: "धर्म" },
+  { korean: "가격", nepali: "मूल्य" },
+  { korean: "이다", nepali: "हो" },
+  { korean: "이때", nepali: "त्यो समयमा" },
+  { korean: "그때", nepali: "त्यो समयमा" },
+  { korean: "여태", nepali: "अहिलेसम्म" },
+  { korean: "곤/바로/즉각", nepali: "तत्काल" },
+  { korean: "당장 죽시", nepali: "अहिले नै" },
+  { korean: "벌써/이마", nepali: "पहिले नै" },
+  { korean: "아직", nepali: "अझै" },
+  { korean: "바그", nepali: "अश्लील" },
+  { korean: "음탕", nepali: "दुराचारी" },
+  { korean: "최근/최신", nepali: "हालसालै" },
+  { korean: "거의", nepali: "लगभग" },
+  { korean: "만큼", nepali: "जति" },
+  { korean: "처에", nepali: "ठाउँ" },
+  { korean: "후에", nepali: "पछि" },
+  { korean: "요즘/요세", nepali: "यतिखेर" },
+  { korean: "원래", nepali: "मूल रूपमा" },
+  { korean: "옛날", nepali: "पुरानो" },
+  { korean: "약", nepali: "औषधि" },
+  { korean: "주의하다", nepali: "सावधानी अपनाउनु" },
+  { korean: "제초하다", nepali: "घाँस सफा गर्नु" },
+  { korean: "제출하다", nepali: "पेश गर्नु" },
+  { korean: "준다", nepali: "दिनु" },
+  { korean: "제공하다", nepali: "उपलब्ध गराउनु" },
+  { korean: "진찰하다", nepali: "परीक्षण गर्नु" },
+  { korean: "지휘하다", nepali: "नेतृत्व गर्नु" },
+  { korean: "자라다", nepali: "विकसित हुनु" },
+  { korean: "증명하다", nepali: "प्रमाणित गर्नु" },
+  { korean: "적응하다", nepali: "अनुकूलन गर्नु" },
+  { korean: "제안하다", nepali: "सुझाव गर्नु" },
+  { korean: "제설하다", nepali: "हिउँ सफा गर्नु" },
+  { korean: "지치다", nepali: "थाक्नु" },
+  { korean: "차다", nepali: "पार्नु" },
+  { korean: "차리다", nepali: "सजाउनु" },
+  { korean: "처리하다", nepali: "व्यवस्थापन गर्नु" },
+  { korean: "참다", nepali: "सहन गर्नु" },
+  { korean: "청소하다", nepali: "सफा गर्नु" },
+  { korean: "춥다", nepali: "चिसो हुनु" },
+  { korean: "추워지다", nepali: "चिसो हुनु" },
+  { korean: "취득하다", nepali: "प्राप्त गर्नु" },
+  { korean: "취소하다", nepali: "रद्ध गर्नु" },
+  { korean: "취사하다", nepali: "खाना पकाउनु" },
+  { korean: "취침하다", nepali: "सुत्नु" },
+  { korean: "출석하다", nepali: "उपस्थित हुनु" },
+  { korean: "출근하다", nepali: "काममा जानु" },
+  { korean: "출퇴근하다", nepali: "काम आउजाउ गर्नु" },
+  { korean: "초대하다", nepali: "आमन्त्रण गर्नु" },
+  { korean: "초대받다", nepali: "आमन्त्रण पाउनु" },
+  { korean: "춤을 추다", nepali: "नाच्नु" },
+  { korean: "침을 삼키다", nepali: "थुक निल्नु" },
+  { korean: "침을 받다", nepali: "थुक लगाउनु" },
+  { korean: "추축하다", nepali: "अनुमान लगाउनु" },
+  { korean: "쳐다보다", nepali: "हेरिरहनु" },
+  { korean: "축하하다", nepali: "बधाई दिनु" },
+  { korean: "출발하다", nepali: "जाने तयारी गर्नु/रवानگي हुनु" },
+  { korean: "취직하다", nepali: "रोजगारी पाउनु" },
+  { korean: "취미 생활을 하다", nepali: "रुचिको काम गर्नु" },
+  { korean: "차지하다", nepali: "ओगट्नु/अधिकार गर्नु" },
+  { korean: "촬영하다", nepali: "शूट गर्नु/छायांकन गर्नु" },
+  { korean: "찰과상을 입다", nepali: "घाउ लाग्नु" },
+  { korean: "누구하고 누구한다", nepali: "कोसँग के गर्छन्" },
+  { korean: "누가", nepali: "को" },
+  { korean: "어디", nepali: "कहाँ" },
+  { korean: "어디 어디", nepali: "कुन कुन ठाउँ" },
+  { korean: "어디에서 (어디서)", nepali: "कहाँबाट" },
+  { korean: "어디로", nepali: "कहाँतिर" },
+  { korean: "어제", nepali: "हिजो" },
+  { korean: "언제 언제", nepali: "कहिले कहिले" },
+  { korean: "어떤게", nepali: "कुन चाहिन्छ" },
+  { korean: "어느", nepali: "कुन" },
+  { korean: "무슨", nepali: "के (खालको)" },
+  { korean: "어떤", nepali: "कस्तो" },
+  { korean: "어느 날", nepali: "कुन दिन" },
+  { korean: "무슨 요일", nepali: "के दिन" },
+  { korean: "무슨 일", nepali: "के कुरा/घटना" },
+  { korean: "어떤 사람", nepali: "कस्तो व्यक्ति" },
+  { korean: "얼마", nepali: "कति" },
+  { korean: "몇", nepali: "कति वटा" },
+  { korean: "얼마동안", nepali: "कति समयसम्म" },
+  { korean: "얼마큼", nepali: "कति धेरै" },
+  { korean: "몇몇개", nepali: "केहीवटा" },
+  { korean: "몇명", nepali: "कति जना" },
+  { korean: "몇년", nepali: "कति वर्ष" },
+  { korean: "몇번", nepali: "कति पटक" },
+  { korean: "왜 그래요?", nepali: "किन त्यसो?" },
+  { korean: "어떻다", nepali: "कस्तो छ" },
+  { korean: "처구하다", nepali: "आक्रमण गर्नु" },
+  { korean: "치우다", nepali: "सफा गर्नु" },
+  { korean: "참다", nepali: "धैर्य गर्नु/सहनु" },
+  { korean: "참가하다", nepali: "भाग लिनु" },
+  { korean: "참석하다", nepali: "उपस्थित हुनु" },
+  { korean: "창피하다/챔피하다", nepali: "लाज लाग्नु" },
+  { korean: "취하다", nepali: "मग्न हुनु/पिउनु" },
+  { korean: "체포하다", nepali: "पक्राउ गर्नु" },
+  { korean: "체포되다", nepali: "पक्राउ पर्नु" },
+  { korean: "체득하다", nepali: "अनुभव गर्नु" },
+  { korean: "출생하다", nepali: "जन्म हुनु" },
+  { korean: "출출하다", nepali: "भोक लाग्नु" },
+  { korean: "추처하다", nepali: "प्रशंसा गर्नु" },
+  { korean: "칭찬을 받다", nepali: "प्रशंसा पाउनु" },
+  { korean: "독점하다", nepali: "एकाधिकार गर्नु" },
+  { korean: "출국하다", nepali: "देश छोड्नु" },
+  { korean: "추방을 당하다", nepali: "देश निकाला पाउनु" },
+  { korean: "친절하다", nepali: "दयालु हुनु" },
+  { korean: "추돌하다", nepali: "ठक्कर लाग्नु" },
+  { korean: "추가하다", nepali: "थप्नु" },
+  { korean: "차별하다", nepali: "भेदभाव गर्नु" },
+  { korean: "차례를 기다리다", nepali: "पालो कुर्नु" },
+  { korean: "차단하다", nepali: "रोध्नु/अवरुद्ध गर्नु" },
+  { korean: "주로", nepali: "मुख्य रूपमा" },
+  { korean: "이내", nepali: "भित्रै" },
+  { korean: "더", nepali: "अझ" },
+  { korean: "계속/연속", nepali: "लगातार" },
+  { korean: "지속", nepali: "निरन्तरता" },
+  { korean: "꾸준히", nepali: "लगातार रूपमा" },
+  { korean: "자주", nepali: "धेरै पटक" },
+  { korean: "자꾸", nepali: "बारम्बार" },
+  { korean: "다시/또", nepali: "फेरि" },
+  { korean: "언제나/항상/늘", nepali: "सधैं" },
+  { korean: "영원히", nepali: "सदाको लागि" },
+  { korean: "여전히", nepali: "अझै पनि" },
+  { korean: "가끔/때때로", nepali: "कहिलेकाहीं" },
+  { korean: "언젠가", nepali: "कुनै दिन" },
+  { korean: "승객", nepali: "यात्री" },
+  { korean: "도로", nepali: "सडक" },
+  { korean: "잠바", nepali: "ज्याकेट" },
+  { korean: "굴착기", nepali: "डोजर/खन्ने मेसिन" },
+  { korean: "땅", nepali: "जमिन" },
+  { korean: "갑자기", nepali: "अचानक" },
+  { korean: "얇다", nepali: "पातलो" },
+  { korean: "주문", nepali: "अर्डर/आदेश" },
+  { korean: "교통", nepali: "यातायात" },
+  { korean: "기침", nepali: "खोकी" },
+  { korean: "작업장", nepali: "कार्यस्थल" },
+  { korean: "갈타다", nepali: "चढ्नु" },
+  { korean: "쏘다", nepali: "गोली हान्नु/टोक्नु" },
+  { korean: "신문", nepali: "समाचार पत्र" },
+  { korean: "동료", nepali: "सहकर्मी" },
+  { korean: "취해지다", nepali: "मातेको हुनु" },
+  { korean: "친구를 사귀다", nepali: "साथी बनाउनु" },
+  { korean: "켜다", nepali: "बालेको/अन गर्नु" },
+  { korean: "커닝하다", nepali: "नकल गर्नु" },
+  { korean: "캐다", nepali: "खन्नु" },
+  { korean: "키우다", nepali: "हुर्काउनु/पाल्नु" },
+  { korean: "커피를 타다", nepali: "कफी बनाउनु" },
+  { korean: "커피를 마시다", nepali: "कफी पिउनु" },
+  { korean: "키가 크다", nepali: "उचाइ ठूलो हुनु" },
+  { korean: "키가 작다", nepali: "उचाइ सानो हुनु" },
+  { korean: "커지다", nepali: "ठूलो हुनु" },
+  { korean: "쾌락을 받다", nepali: "आनन्द पाउनु" },
+  { korean: "쾌적하다", nepali: "आरामदायी हुनु" },
+  { korean: "콧물이 나다", nepali: "नाकबाट सिँगान आउनु" },
+  { korean: "칼로 자르다", nepali: "चक्कुले काट्नु" },
+  { korean: "칼로 찌르다", nepali: "चक्कुले घोच्नु" },
+  { korean: "칼을 갈다", nepali: "चक्कु धारिलो बनाउनु" },
+  { korean: "컴퓨터를 배우다", nepali: "कम्प्युटर सिक्नु" },
+  { korean: "컴퓨터를 가르치다", nepali: "कम्प्युटर पढाउनु" },
+  { korean: "케이크를 만들다", nepali: "केक बनाउनु" },
+  { korean: "크리스마스를 쇠다", nepali: "क्रिसमस मनाउनु" },
+  { korean: "타다", nepali: "चढ्नु/जल्नु" },
+  { korean: "버스를 타다", nepali: "बस चढ्नु" },
+  { korean: "월급을 타다", nepali: "तलब पाउनु" },
+  { korean: "음식이 타다", nepali: "खाना जल्नु" },
+  { korean: "태어나다", nepali: "जन्मिनु" },
+  { korean: "통하다", nepali: "संचार हुनु" },
+  { korean: "통일하다", nepali: "एकीकरण गर्नु" },
+  { korean: "통화하다", nepali: "फोनमा कुरा गर्नु" },
+  { korean: "퇴근하다", nepali: "कामबाट फर्कनु" },
+  { korean: "퇴직하다", nepali: "निवृत्त हुनु" },
+  { korean: "퇴직금을 받다", nepali: "निवृत्तिभरण पाउनु" },
+  { korean: "퇴사하다", nepali: "काम छोड्नु" },
+  { korean: "퇴원하다", nepali: "अस्पतालबाट छुट्नु" },
+  { korean: "퇴학하다", nepali: "स्कुल छोड्नु" },
+  { korean: "튀기다", nepali: "भुट्नु/तल्नु" },
+  { korean: "터뜨리다", nepali: "फुटाउनु/फोड्नु" },
+  { korean: "터지다", nepali: "फुट्नु" },
+  { korean: "투자하다", nepali: "लगानी गर्नु" },
+  { korean: "타락하다", nepali: "पतन हुनु" },
+  { korean: "탈출하다", nepali: "भाग्नु/उद्धार हुनु" },
+  { korean: "튼튼하다", nepali: "मजबुत हुनु" },
+  { korean: "토하다", nepali: "बान्ता गर्नु" },
+  { korean: "투입하다", nepali: "प्रवेश गर्नु/समावेश गर्नु" },
+  { korean: "투표하다", nepali: "भोट हाल्नु" },
+  { korean: "통장을 만들다", nepali: "बैंक खाता खोल्नु" },
+  { korean: "태우다", nepali: "जलाउनु/चढाउनु" },
+  { korean: "태권도를 배우다", nepali: "तायक्वान्दो सिक्नु" },
+    ];
+
+    let selectedPairs = [];
+    let selectedCards = [];
+    let matchedCount = 0;
+    let wrongCount = 0;
+    let matchedCards = [];
+    let wrongCards = [];
+    let totalMatched = 0; // Tracks the total matched count across games
+    let totalWrong = 0; // Tracks the total wrong count across games
+
+    function shufflePairs() {
+        selectedPairs = allPairs.sort(() => Math.random() - 0.5).slice(0, 7);
+    }
+
+    function renderGameGrid() {
+        const koreanColumn = document.getElementById("koreanColumn");
+        const nepaliColumn = document.getElementById("nepaliColumn");
+        koreanColumn.innerHTML = "";
+        nepaliColumn.innerHTML = "";
+
+        const shuffledNepali = selectedPairs.map(pair => pair.nepali).sort(() => Math.random() - 0.5);
+        const shuffledKorean = selectedPairs.map(pair => pair.korean).sort(() => Math.random() - 0.5);
+
+        shuffledNepali.forEach(nepali => {
+            const card = document.createElement("div");
+            card.classList.add("card");
+            card.textContent = nepali;
+            card.dataset.type = "nepali";
+            card.addEventListener("click", () => selectCard(card));
+            nepaliColumn.appendChild(card);
+        });
+
+        shuffledKorean.forEach(korean => {
+            const card = document.createElement("div");
+            card.classList.add("card");
+            card.textContent = korean;
+            card.dataset.type = "korean";
+            card.addEventListener("click", () => selectCard(card));
+            koreanColumn.appendChild(card);
+        });
+    }
+
+    function selectCard(card) {
+        // Prevent duplicate card selection
+        if (selectedCards.includes(card) || card.classList.contains("matched")) return;
+
+        if (selectedCards.length === 1 && card.dataset.type === selectedCards[0].dataset.type) {
+            selectedCards[0].classList.remove("selected");
+            selectedCards = [];
+            return;
+        }
+
+        card.classList.add("selected");
+        selectedCards.push(card);
+
+        const lang = card.dataset.type === "nepali" ? "ne-NP" : "ko-KR";
+        playVoice(card.textContent, lang);
+
+        if (selectedCards.length === 2) {
+            checkMatch();
+        }
+    }
+
+    function playVoice(text, lang) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = lang;
+        speechSynthesis.speak(utterance);
+    }
+
+    function checkMatch() {
+        const [card1, card2] = selectedCards;
+
+        const isMatch = selectedPairs.some(
+            pair =>
+                (pair.nepali === card1.textContent && pair.korean === card2.textContent) ||
+                (pair.korean === card1.textContent && pair.nepali === card2.textContent)
+        );
+
+        if (isMatch) {
+            card1.classList.add("matched");
+            card2.classList.add("matched");
+            matchedCards.push({ korean: card2.textContent, nepali: card1.textContent });
+            setTimeout(() => {
+                card1.style.visibility = "hidden";
+                card2.style.visibility = "hidden";
+            }, 500);
+            matchedCount++;
+            totalMatched++;
+        } else {
+            card1.classList.add("incorrect");
+            card2.classList.add("incorrect");
+            wrongCards.push({ korean: card2.textContent, nepali: card1.textContent });
+            wrongCount++;
+            totalWrong++;
+            setTimeout(() => {
+                card1.classList.remove("selected", "incorrect");
+                card2.classList.remove("selected", "incorrect");
+            }, 1000);
+        }
+
+        selectedCards = [];
+        updateUI();
+    }
+
+    function updateUI() {
+        document.getElementById("matchedCount").textContent = totalMatched;
+        document.getElementById("wrongCount").textContent = totalWrong;
+
+        const progress = document.getElementById("progress");
+        progress.style.width = `${(matchedCount / selectedPairs.length) * 100}%`;
+
+        if (matchedCount === selectedPairs.length) {
+            document.getElementById("continueButton").style.display = "block";
+        }
+    }
+
+    function continueGame() {
+        // Reset only necessary elements
+        shufflePairs();
+        matchedCount = 0; // Reset current game progress
+        wrongCount = 0; // Reset current game progress
+        selectedCards = [];
+        document.getElementById("progress").style.width = "0%";
+        document.getElementById("continueButton").style.display = "none";
+        renderGameGrid();
+    }
+
+    function reviewCards() {
+        alert("Matched Cards: " + JSON.stringify(matchedCards) + "\nWrong Cards: " + JSON.stringify(wrongCards));
+    }
+
+    shufflePairs();
+    renderGameGrid();
+</script>
